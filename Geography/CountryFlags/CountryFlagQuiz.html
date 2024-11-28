@@ -1,0 +1,2073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flag Quiz Game</title>
+<style>
+  /* CSS styles */
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+  }
+  .hidden {
+    display: none;
+  }
+  .visible {
+    display: block;
+  }
+  #flag {
+    font-size: 10em;
+    margin: 20px 0;
+  }
+  .options {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .option-button {
+    padding: 15px;
+    margin: 5px;
+    font-size: 1.2em;
+    width: 80%;
+    max-width: 300px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  #feedback {
+    font-size: 1.5em;
+    margin: 20px 0;
+    min-height: 50px;
+  }
+  .correct {
+    color: green;
+    animation: correctAnimation 1s;
+  }
+  .incorrect {
+    color: red;
+    animation: incorrectAnimation 1s;
+  }
+  @keyframes correctAnimation {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+  @keyframes incorrectAnimation {
+    0% { transform: scale(1); }
+    25% { transform: scale(0.9); }
+    50% { transform: scale(1.1); }
+    75% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+  }
+  #score {
+    font-size: 1em;
+    margin: 10px 0;
+  }
+  #controls {
+    margin: 20px 0;
+  }
+  #controls button {
+    padding: 10px;
+    margin: 5px;
+    font-size: 1em;
+  }
+  #settings {
+    text-align: left;
+    padding: 20px;
+  }
+  #settings h2 {
+    text-align: center;
+  }
+  #settings label {
+    display: block;
+    margin: 10px 0;
+  }
+  #settings input[type="checkbox"] {
+    margin-right: 10px;
+  }
+  #settings input[type="number"] {
+    width: 50px;
+  }
+  #continent-picker label {
+    display: inline-block;
+    width: 45%;
+  }
+  @media (max-width: 600px) {
+    .option-button {
+      font-size: 1em;
+    }
+    #flag {
+      font-size: 6em;
+    }
+  }
+  /* Modal Styles */
+  .modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 100; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+  }
+  .modal-content {
+    background-color: #fefefe;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 400px; /* Could be more or less, depending on screen size */
+    text-align: center;
+    border-radius: 10px;
+  }
+  .modal-content h2 {
+    margin-top: 0;
+  }
+  .modal-content button {
+    padding: 10px 20px;
+    margin: 10px;
+    font-size: 1em;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<h1>Flag Quiz Game</h1>
+<div id="flag">🏳️</div>
+
+<div class="options">
+  <button class="option-button" id="option0"></button>
+  <button class="option-button" id="option1"></button>
+  <button class="option-button" id="option2"></button>
+  <button class="option-button" id="option3"></button>
+  <button class="option-button" id="option4" style="display: none;"></button>
+</div>
+
+<div id="feedback"></div>
+
+<div id="score">Score: 0/0</div>
+
+<div id="controls">
+  <button id="skipButton">Skip (3 left)</button>
+  <button id="settingsButton">Settings</button>
+  <button id="resetButton">Reset</button>
+</div>
+
+<div id="settings" class="hidden">
+  <h2>Settings</h2>
+  <label><input type="checkbox" id="testMode"> Each Country Once (Test Mode)</label>
+  <label><input type="checkbox" id="hardMode"> Hard Mode</label>
+  <label><input type="checkbox" id="noneOption"> Include "None of the Above"</label>
+  <label>Skip Count: <input type="number" id="skipCount" value="3" min="0"></label>
+  <h3>Continents:</h3>
+  <div id="continent-picker">
+    <label><input type="checkbox" class="continent" value="Africa" checked> Africa</label>
+    <label><input type="checkbox" class="continent" value="Asia" checked> Asia</label>
+    <label><input type="checkbox" class="continent" value="Europe" checked> Europe</label>
+    <label><input type="checkbox" class="continent" value="North America" checked> North America</label>
+    <label><input type="checkbox" class="continent" value="South America" checked> South America</label>
+    <label><input type="checkbox" class="continent" value="Oceania" checked> Oceania</label>
+  </div>
+  <label>
+    <input type="checkbox" id="excludeDisputed">
+    Exclude Disputed Regions
+    <span title="Excludes regions with disputed status or limited recognition.">ℹ️</span>
+  </label>  <button id="saveSettingsButton">Save Settings</button>
+  <button id="fullresetButton">Full Reset</button>
+</div>
+
+<!-- Modal Dialog -->
+<div id="disputeModal" class="modal">
+  <div class="modal-content">
+    <h2>Disputed Regions</h2>
+    <p>Would you like to include or exclude regions with disputed status or limited recognition?</p>
+    <button id="includeDisputedButton">Include Disputed Regions</button>
+    <button id="excludeDisputedButton">Exclude Disputed Regions</button>
+  </div>
+</div>
+
+<script>
+  // JavaScript Code
+
+  // Sample country data
+  const countryData = [
+  {
+    "name": "Afghanistan",
+    "isoCode": "AF",
+    "flag": "🇦🇫",
+    "continent": "Asia",
+    "similarNames": ["Albania", "Algeria"],
+    "similarFlags": ["Kenya", "South Sudan"]
+  },
+  {
+    "name": "Albania",
+    "isoCode": "AL",
+    "flag": "🇦🇱",
+    "continent": "Europe",
+    "similarNames": ["Algeria", "Armenia"],
+    "similarFlags": ["Austria", "Montenegro"]
+  },
+  {
+    "name": "Algeria",
+    "isoCode": "DZ",
+    "flag": "🇩🇿",
+    "continent": "Africa",
+    "similarNames": ["Nigeria", "Niger"],
+    "similarFlags": ["Pakistan", "Turkey"]
+  },
+  {
+    "name": "Andorra",
+    "isoCode": "AD",
+    "flag": "🇦🇩",
+    "continent": "Europe",
+    "similarNames": ["Angola", "Antigua and Barbuda"],
+    "similarFlags": ["Romania", "Chad", "Moldova"]
+  },
+  {
+    "name": "Angola",
+    "isoCode": "AO",
+    "flag": "🇦🇴",
+    "continent": "Africa",
+    "similarNames": ["Andorra", "Antigua and Barbuda"],
+    "similarFlags": ["Mozambique", "Belize"]
+  },
+  {
+    "name": "Antigua and Barbuda",
+    "isoCode": "AG",
+    "flag": "🇦🇬",
+    "continent": "North America",
+    "similarNames": ["Angola", "Andorra"],
+    "similarFlags": ["The Bahamas", "Uganda"]
+  },
+  {
+    "name": "Argentina",
+    "isoCode": "AR",
+    "flag": "🇦🇷",
+    "continent": "South America",
+    "similarNames": ["Armenia", "Algeria"],
+    "similarFlags": ["El Salvador", "Guatemala", "Nicaragua"]
+  },
+  {
+    "name": "Armenia",
+    "isoCode": "AM",
+    "flag": "🇦🇲",
+    "continent": "Asia",
+    "similarNames": ["Albania", "Argentina"],
+    "similarFlags": ["Colombia", "Romania", "Chad"]
+  },
+  {
+    "name": "Australia",
+    "isoCode": "AU",
+    "flag": "🇦🇺",
+    "continent": "Oceania",
+    "similarNames": ["Austria"],
+    "similarFlags": ["New Zealand", "Tuvalu", "UK"]
+  },
+  {
+    "name": "Austria",
+    "isoCode": "AT",
+    "flag": "🇦🇹",
+    "continent": "Europe",
+    "similarNames": ["Australia"],
+    "similarFlags": ["Latvia", "Lebanon"]
+  },
+  {
+    "name": "Azerbaijan",
+    "isoCode": "AZ",
+    "flag": "🇦🇿",
+    "continent": "Asia",
+    "similarNames": ["Uzbekistan", "Afghanistan"],
+    "similarFlags": ["Turkmenistan", "Uzbekistan"]
+  },
+  {
+    "name": "The Bahamas",
+    "isoCode": "BS",
+    "flag": "🇧🇸",
+    "continent": "North America",
+    "similarNames": ["Barbados", "Bahrain"],
+    "similarFlags": ["Antigua and Barbuda", "South Africa"]
+  },
+  {
+    "name": "Bahrain",
+    "isoCode": "BH",
+    "flag": "🇧🇭",
+    "continent": "Asia",
+    "similarNames": ["The Bahamas", "Bangladesh"],
+    "similarFlags": ["Qatar", "Latvia"]
+  },
+  {
+    "name": "Bangladesh",
+    "isoCode": "BD",
+    "flag": "🇧🇩",
+    "continent": "Asia",
+    "similarNames": ["Barbados", "Bahrain"],
+    "similarFlags": ["Japan", "Palau"]
+  },
+  {
+    "name": "Barbados",
+    "isoCode": "BB",
+    "flag": "🇧🇧",
+    "continent": "North America",
+    "similarNames": ["The Bahamas", "Belarus"],
+    "similarFlags": ["Ukraine", "Nauru"]
+  },
+  {
+    "name": "Belarus",
+    "isoCode": "BY",
+    "flag": "🇧🇾",
+    "continent": "Europe",
+    "similarNames": ["Belgium", "Belize"],
+    "similarFlags": ["Tajikistan", "Turkmenistan"]
+  },
+  {
+    "name": "Belgium",
+    "isoCode": "BE",
+    "flag": "🇧🇪",
+    "continent": "Europe",
+    "similarNames": ["Belarus", "Belize"],
+    "similarFlags": ["Germany", "Uganda"]
+  },
+  {
+    "name": "Belize",
+    "isoCode": "BZ",
+    "flag": "🇧🇿",
+    "continent": "North America",
+    "similarNames": ["Belarus", "Belgium"],
+    "similarFlags": ["Mozambique", "Cambodia"]
+  },
+  {
+    "name": "Benin",
+    "isoCode": "BJ",
+    "flag": "🇧🇯",
+    "continent": "Africa",
+    "similarNames": ["Bahrain", "Bangladesh"],
+    "similarFlags": ["Guinea", "Cameroon"]
+  },
+  {
+    "name": "Bhutan",
+    "isoCode": "BT",
+    "flag": "🇧🇹",
+    "continent": "Asia",
+    "similarNames": ["Bangladesh", "Botswana"],
+    "similarFlags": ["Wales"]
+  },
+  {
+    "name": "Bolivia",
+    "isoCode": "BO",
+    "flag": "🇧🇴",
+    "continent": "South America",
+    "similarNames": ["Belize", "Bosnia and Herzegovina"],
+    "similarFlags": ["Ghana", "Lithuania"]
+  },
+  {
+    "name": "Bosnia and Herzegovina",
+    "isoCode": "BA",
+    "flag": "🇧🇦",
+    "continent": "Europe",
+    "similarNames": ["Bolivia", "Botswana"],
+    "similarFlags": ["Kosovo", "Cape Verde"]
+  },
+  {
+    "name": "Botswana",
+    "isoCode": "BW",
+    "flag": "🇧🇼",
+    "continent": "Africa",
+    "similarNames": ["Bhutan", "Bahamas"],
+    "similarFlags": ["Estonia", "Lesotho"]
+  },
+  {
+    "name": "Brazil",
+    "isoCode": "BR",
+    "flag": "🇧🇷",
+    "continent": "South America",
+    "similarNames": ["Brunei", "Belize"],
+    "similarFlags": ["Guyana", "Ghana"]
+  },
+  {
+    "name": "Brunei",
+    "isoCode": "BN",
+    "flag": "🇧🇳",
+    "continent": "Asia",
+    "similarNames": ["Brazil", "Bulgaria"],
+    "similarFlags": ["Bhutan", "Uganda"]
+  },
+  {
+    "name": "Bulgaria",
+    "isoCode": "BG",
+    "flag": "🇧🇬",
+    "continent": "Europe",
+    "similarNames": ["Bolivia", "Belarus"],
+    "similarFlags": ["Hungary", "Iran"]
+  },
+  {
+    "name": "Burkina Faso",
+    "isoCode": "BF",
+    "flag": "🇧🇫",
+    "continent": "Africa",
+    "similarNames": ["Burundi", "Myanmar"],
+    "similarFlags": ["Cameroon", "Myanmar"]
+  },
+  {
+    "name": "Burundi",
+    "isoCode": "BI",
+    "flag": "🇧🇮",
+    "continent": "Africa",
+    "similarNames": ["Burkina Faso", "Myanmar"],
+    "similarFlags": ["Djibouti", "Niger"]
+  },
+  {
+    "name": "Cambodia",
+    "isoCode": "KH",
+    "flag": "🇰🇭",
+    "continent": "Asia",
+    "similarNames": ["Cameroon", "Canada"],
+    "similarFlags": ["Belize", "Nepal"]
+  },
+  {
+    "name": "Cameroon",
+    "isoCode": "CM",
+    "flag": "🇨🇲",
+    "continent": "Africa",
+    "similarNames": ["Cambodia", "Canada"],
+    "similarFlags": ["Senegal", "Ghana"]
+  },
+  {
+    "name": "Canada",
+    "isoCode": "CA",
+    "flag": "🇨🇦",
+    "continent": "North America",
+    "similarNames": ["Cambodia", "Cameroon"],
+    "similarFlags": ["Peru", "Lebanon"]
+  },
+  {
+    "name": "Cape Verde",
+    "isoCode": "CV",
+    "flag": "🇨🇻",
+    "continent": "Africa",
+    "similarNames": ["Cabo Verde", "Chad"],
+    "similarFlags": ["Bosnia and Herzegovina", "Samoa"]
+  },
+  {
+    "name": "Central African Republic",
+    "isoCode": "CF",
+    "flag": "🇨🇫",
+    "continent": "Africa",
+    "similarNames": ["Republic of the Congo", "Democratic Republic of the Congo"],
+    "similarFlags": ["South Sudan", "Comoros"]
+  },
+  {
+    "name": "Chad",
+    "isoCode": "TD",
+    "flag": "🇹🇩",
+    "continent": "Africa",
+    "similarNames": ["Chile", "Czech Republic"],
+    "similarFlags": ["Romania", "Andorra", "Moldova"]
+  },
+  {
+    "name": "Chile",
+    "isoCode": "CL",
+    "flag": "🇨🇱",
+    "continent": "South America",
+    "similarNames": ["Chad", "China"],
+    "similarFlags": ["Texas (USA State)", "Liberia"]
+  },
+  {
+    "name": "China",
+    "isoCode": "CN",
+    "flag": "🇨🇳",
+    "continent": "Asia",
+    "similarNames": ["Chile", "Cyprus"],
+    "similarFlags": ["Vietnam", "North Korea"]
+  },
+  {
+    "name": "Colombia",
+    "isoCode": "CO",
+    "flag": "🇨🇴",
+    "continent": "South America",
+    "similarNames": ["Cambodia", "Comoros"],
+    "similarFlags": ["Ecuador", "Venezuela"]
+  },
+  {
+    "name": "Comoros",
+    "isoCode": "KM",
+    "flag": "🇰🇲",
+    "continent": "Africa",
+    "similarNames": ["Cameroon", "Colombia"],
+    "similarFlags": ["Seychelles", "South Africa"]
+  },
+  {
+    "name": "Republic of the Congo",
+    "isoCode": "CG",
+    "flag": "🇨🇬",
+    "continent": "Africa",
+    "similarNames": ["Democratic Republic of the Congo"],
+    "similarFlags": ["Benin", "Togo"]
+  },
+  {
+    "name": "Democratic Republic of the Congo",
+    "isoCode": "CD",
+    "flag": "🇨🇩",
+    "continent": "Africa",
+    "similarNames": ["Republic of the Congo"],
+    "similarFlags": ["Tanzania", "Angola"]
+  },
+  {
+    "name": "Costa Rica",
+    "isoCode": "CR",
+    "flag": "🇨🇷",
+    "continent": "North America",
+    "similarNames": ["Puerto Rico"],
+    "similarFlags": ["Thailand", "North Korea"]
+  },
+  {
+    "name": "Côte d'Ivoire",
+    "isoCode": "CI",
+    "flag": "🇨🇮",
+    "continent": "Africa",
+    "similarNames": ["Ireland"],
+    "similarFlags": ["Ireland", "Italy"]
+  },
+  {
+    "name": "Croatia",
+    "isoCode": "HR",
+    "flag": "🇭🇷",
+    "continent": "Europe",
+    "similarNames": ["Czech Republic"],
+    "similarFlags": ["Slovakia", "Paraguay"]
+  },
+  {
+    "name": "Cuba",
+    "isoCode": "CU",
+    "flag": "🇨🇺",
+    "continent": "North America",
+    "similarNames": ["Cyprus"],
+    "similarFlags": ["Puerto Rico", "North Korea"]
+  },
+  {
+    "name": "Cyprus",
+    "isoCode": "CY",
+    "flag": "🇨🇾",
+    "continent": "Europe",
+    "similarNames": ["Cuba"],
+    "similarFlags": ["Nauru (colors)", "Kazakhstan (colors)"]
+  },
+  {
+    "name": "Czech Republic",
+    "isoCode": "CZ",
+    "flag": "🇨🇿",
+    "continent": "Europe",
+    "similarNames": ["Slovakia"],
+    "similarFlags": ["Philippines", "Russia"]
+  },
+  {
+    "name": "Denmark",
+    "isoCode": "DK",
+    "flag": "🇩🇰",
+    "continent": "Europe",
+    "similarNames": ["Dominica", "Dominican Republic"],
+    "similarFlags": ["Switzerland", "Norway"]
+  },
+  {
+    "name": "Djibouti",
+    "isoCode": "DJ",
+    "flag": "🇩🇯",
+    "continent": "Africa",
+    "similarNames": ["Dominica"],
+    "similarFlags": ["North Korea", "Cuba"]
+  },
+  {
+    "name": "Dominica",
+    "isoCode": "DM",
+    "flag": "🇩🇲",
+    "continent": "North America",
+    "similarNames": ["Dominican Republic"],
+    "similarFlags": ["Belize", "Grenada"]
+  },
+  {
+    "name": "Dominican Republic",
+    "isoCode": "DO",
+    "flag": "🇩🇴",
+    "continent": "North America",
+    "similarNames": ["Dominica"],
+    "similarFlags": ["Paraguay", "Slovakia"]
+  },
+  {
+    "name": "Ecuador",
+    "isoCode": "EC",
+    "flag": "🇪🇨",
+    "continent": "South America",
+    "similarNames": ["Equatorial Guinea"],
+    "similarFlags": ["Colombia", "Venezuela"]
+  },
+  {
+    "name": "Egypt",
+    "isoCode": "EG",
+    "flag": "🇪🇬",
+    "continent": "Africa",
+    "similarNames": ["Equatorial Guinea"],
+    "similarFlags": ["Iraq", "Syria", "Yemen"]
+  },
+  {
+    "name": "El Salvador",
+    "isoCode": "SV",
+    "flag": "🇸🇻",
+    "continent": "North America",
+    "similarNames": ["Equatorial Guinea"],
+    "similarFlags": ["Nicaragua", "Guatemala", "Honduras"]
+  },
+  {
+    "name": "Equatorial Guinea",
+    "isoCode": "GQ",
+    "flag": "🇬🇶",
+    "continent": "Africa",
+    "similarNames": ["Ecuador", "Guinea"],
+    "similarFlags": ["Iran", "Bolivia"]
+  },
+  {
+    "name": "Eritrea",
+    "isoCode": "ER",
+    "flag": "🇪🇷",
+    "continent": "Africa",
+    "similarNames": ["Estonia", "Ethiopia"],
+    "similarFlags": ["Djibouti", "South Sudan"]
+  },
+  {
+    "name": "Estonia",
+    "isoCode": "EE",
+    "flag": "🇪🇪",
+    "continent": "Europe",
+    "similarNames": ["Eritrea", "Ethiopia"],
+    "similarFlags": ["Botswana", "Greece"]
+  },
+  {
+    "name": "Eswatini",
+    "isoCode": "SZ",
+    "flag": "🇸🇿",
+    "continent": "Africa",
+    "similarNames": ["Switzerland", "Sweden"],
+    "similarFlags": ["Lesotho", "Namibia"]
+  },
+  {
+    "name": "Ethiopia",
+    "isoCode": "ET",
+    "flag": "🇪🇹",
+    "continent": "Africa",
+    "similarNames": ["Estonia", "Eritrea"],
+    "similarFlags": ["Central African Republic", "Mauritius"]
+  },
+  {
+    "name": "Fiji",
+    "isoCode": "FJ",
+    "flag": "🇫🇯",
+    "continent": "Oceania",
+    "similarNames": ["Finland"],
+    "similarFlags": ["Tuvalu", "British Overseas Territories"]
+  },
+  {
+    "name": "Finland",
+    "isoCode": "FI",
+    "flag": "🇫🇮",
+    "continent": "Europe",
+    "similarNames": ["Fiji"],
+    "similarFlags": ["Sweden", "Norway"]
+  },
+  {
+    "name": "France",
+    "isoCode": "FR",
+    "flag": "🇫🇷",
+    "continent": "Europe",
+    "similarNames": ["Finland"],
+    "similarFlags": ["Netherlands", "Russia"]
+  },
+  {
+    "name": "Gabon",
+    "isoCode": "GA",
+    "flag": "🇬🇦",
+    "continent": "Africa",
+    "similarNames": ["Gambia", "Ghana"],
+    "similarFlags": ["Rwanda", "Mauritius"]
+  },
+  {
+    "name": "The Gambia",
+    "isoCode": "GM",
+    "flag": "🇬🇲",
+    "continent": "Africa",
+    "similarNames": ["Gabon", "Zambia"],
+    "similarFlags": ["Equatorial Guinea", "Liberia"]
+  },
+  {
+    "name": "Georgia",
+    "isoCode": "GE",
+    "flag": "🇬🇪",
+    "continent": "Asia",
+    "similarNames": ["Guyana"],
+    "similarFlags": ["England (St George's Cross)", "Malta"]
+  },
+  {
+    "name": "Germany",
+    "isoCode": "DE",
+    "flag": "🇩🇪",
+    "continent": "Europe",
+    "similarNames": ["Ghana"],
+    "similarFlags": ["Belgium", "Uganda"]
+  },
+  {
+    "name": "Ghana",
+    "isoCode": "GH",
+    "flag": "🇬🇭",
+    "continent": "Africa",
+    "similarNames": ["Guyana", "Gabon"],
+    "similarFlags": ["Ethiopia", "Bolivia"]
+  },
+  {
+    "name": "Greece",
+    "isoCode": "GR",
+    "flag": "🇬🇷",
+    "continent": "Europe",
+    "similarNames": ["Georgia"],
+    "similarFlags": ["Uruguay", "Argentina"]
+  },
+  {
+    "name": "Grenada",
+    "isoCode": "GD",
+    "flag": "🇬🇩",
+    "continent": "North America",
+    "similarNames": ["Guinea", "Guinea-Bissau"],
+    "similarFlags": ["Myanmar", "Vanuatu"]
+  },
+  {
+    "name": "Guatemala",
+    "isoCode": "GT",
+    "flag": "🇬🇹",
+    "continent": "North America",
+    "similarNames": ["Guyana", "Guinea"],
+    "similarFlags": ["Nicaragua", "Honduras", "El Salvador"]
+  },
+  {
+    "name": "Guinea",
+    "isoCode": "GN",
+    "flag": "🇬🇳",
+    "continent": "Africa",
+    "similarNames": ["Equatorial Guinea", "Guinea-Bissau"],
+    "similarFlags": ["Mali", "Cameroon"]
+  },
+  {
+    "name": "Guinea-Bissau",
+    "isoCode": "GW",
+    "flag": "🇬🇼",
+    "continent": "Africa",
+    "similarNames": ["Guinea", "Equatorial Guinea"],
+    "similarFlags": ["Ghana", "Cameroon"]
+  },
+  {
+    "name": "Guyana",
+    "isoCode": "GY",
+    "flag": "🇬🇾",
+    "continent": "South America",
+    "similarNames": ["Ghana", "Guinea"],
+    "similarFlags": ["Mozambique", "Zimbabwe"]
+  },
+  {
+    "name": "Haiti",
+    "isoCode": "HT",
+    "flag": "🇭🇹",
+    "continent": "North America",
+    "similarNames": ["Hungary"],
+    "similarFlags": ["Liechtenstein (colors)"]
+  },
+  {
+    "name": "Honduras",
+    "isoCode": "HN",
+    "flag": "🇭🇳",
+    "continent": "North America",
+    "similarNames": ["Hungary"],
+    "similarFlags": ["El Salvador", "Nicaragua"]
+  },
+  {
+    "name": "Hungary",
+    "isoCode": "HU",
+    "flag": "🇭🇺",
+    "continent": "Europe",
+    "similarNames": ["Honduras"],
+    "similarFlags": ["Bulgaria", "Iran"]
+  },
+  {
+    "name": "Iceland",
+    "isoCode": "IS",
+    "flag": "🇮🇸",
+    "continent": "Europe",
+    "similarNames": ["Ireland"],
+    "similarFlags": ["Norway", "UK"]
+  },
+  {
+    "name": "India",
+    "isoCode": "IN",
+    "flag": "🇮🇳",
+    "continent": "Asia",
+    "similarNames": ["Indonesia"],
+    "similarFlags": ["Niger", "Ireland"]
+  },
+  {
+    "name": "Indonesia",
+    "isoCode": "ID",
+    "flag": "🇮🇩",
+    "continent": "Asia",
+    "similarNames": ["India"],
+    "similarFlags": ["Poland", "Monaco"]
+  },
+  {
+    "name": "Iran",
+    "isoCode": "IR",
+    "flag": "🇮🇷",
+    "continent": "Asia",
+    "similarNames": ["Iraq"],
+    "similarFlags": ["Hungary", "Bulgaria", "Italy"]
+  },
+  {
+    "name": "Iraq",
+    "isoCode": "IQ",
+    "flag": "🇮🇶",
+    "continent": "Asia",
+    "similarNames": ["Iran"],
+    "similarFlags": ["Egypt", "Syria", "Yemen"]
+  },
+  {
+    "name": "Ireland",
+    "isoCode": "IE",
+    "flag": "🇮🇪",
+    "continent": "Europe",
+    "similarNames": ["Iceland"],
+    "similarFlags": ["India", "Ivory Coast"]
+  },
+  {
+    "name": "Israel",
+    "isoCode": "IL",
+    "flag": "🇮🇱",
+    "continent": "Asia",
+    "similarNames": ["Italy"],
+    "similarFlags": ["Greece", "Somalia"]
+  },
+  {
+    "name": "Italy",
+    "isoCode": "IT",
+    "flag": "🇮🇹",
+    "continent": "Europe",
+    "similarNames": ["Israel"],
+    "similarFlags": ["Mexico", "Hungary"]
+  },
+  {
+    "name": "Jamaica",
+    "isoCode": "JM",
+    "flag": "🇯🇲",
+    "continent": "North America",
+    "similarNames": ["Japan", "Jordan"],
+    "similarFlags": ["South Africa", "Vanuatu"]
+  },
+  {
+    "name": "Japan",
+    "isoCode": "JP",
+    "flag": "🇯🇵",
+    "continent": "Asia",
+    "similarNames": ["Jordan", "Jamaica"],
+    "similarFlags": ["Bangladesh (colors reversed)", "Palau"]
+  },
+  {
+    "name": "Jordan",
+    "isoCode": "JO",
+    "flag": "🇯🇴",
+    "continent": "Asia",
+    "similarNames": ["Japan"],
+    "similarFlags": ["Palestine", "Sudan"]
+  },
+  {
+    "name": "Kazakhstan",
+    "isoCode": "KZ",
+    "flag": "🇰🇿",
+    "continent": "Asia",
+    "similarNames": ["Kyrgyzstan"],
+    "similarFlags": ["Uzbekistan", "Palau (colors)"]
+  },
+  {
+    "name": "Kenya",
+    "isoCode": "KE",
+    "flag": "🇰🇪",
+    "continent": "Africa",
+    "similarNames": ["Kuwait"],
+    "similarFlags": ["South Sudan", "Malawi"]
+  },
+  {
+    "name": "Kiribati",
+    "isoCode": "KI",
+    "flag": "🇰🇮",
+    "continent": "Oceania",
+    "similarNames": ["Kyrgyzstan"],
+    "similarFlags": ["Maldives"]
+  },
+  {
+    "name": "Kosovo",
+    "isoCode": "XK",
+    "flag": "🇽🇰",
+    "continent": "Europe",
+    "similarNames": ["Kazakhstan"],
+    "similarFlags": ["Bosnia and Herzegovina"],
+    "IsDisputed": true,
+    "reason": "Disputed territory with partial international recognition.(Source Google Gemini 2024-11-28)"
+  },
+  {
+    "name": "North Korea",
+    "isoCode": "KP",
+    "flag": "🇰🇵",
+    "continent": "Asia",
+    "similarNames": ["South Korea"],
+    "similarFlags": ["Costa Rica", "Cuba"]
+  },
+  {
+    "name": "South Korea",
+    "isoCode": "KR",
+    "flag": "🇰🇷",
+    "continent": "Asia",
+    "similarNames": ["North Korea"],
+    "similarFlags": ["Mongolia (colors)"]
+  },
+  {
+    "name": "Kuwait",
+    "isoCode": "KW",
+    "flag": "🇰🇼",
+    "continent": "Asia",
+    "similarNames": ["Kenya"],
+    "similarFlags": ["Sudan", "United Arab Emirates"]
+  },
+  {
+    "name": "Kyrgyzstan",
+    "isoCode": "KG",
+    "flag": "🇰🇬",
+    "continent": "Asia",
+    "similarNames": ["Kazakhstan"],
+    "similarFlags": ["Macedonia", "Mongolia"]
+  },
+  {
+    "name": "Laos",
+    "isoCode": "LA",
+    "flag": "🇱🇦",
+    "continent": "Asia",
+    "similarNames": ["Latvia"],
+    "similarFlags": ["North Korea", "Paraguay"]
+  },
+  {
+    "name": "Latvia",
+    "isoCode": "LV",
+    "flag": "🇱🇻",
+    "continent": "Europe",
+    "similarNames": ["Lithuania"],
+    "similarFlags": ["Austria", "Qatar"]
+  },
+  {
+    "name": "Lebanon",
+    "isoCode": "LB",
+    "flag": "🇱🇧",
+    "continent": "Asia",
+    "similarNames": ["Liberia"],
+    "similarFlags": ["Canada", "Belarus"]
+  },
+  {
+    "name": "Lesotho",
+    "isoCode": "LS",
+    "flag": "🇱🇸",
+    "continent": "Africa",
+    "similarNames": ["Liberia"],
+    "similarFlags": ["Botswana", "Nicaragua"]
+  },
+  {
+    "name": "Liberia",
+    "isoCode": "LR",
+    "flag": "🇱🇷",
+    "continent": "Africa",
+    "similarNames": ["Lebanon"],
+    "similarFlags": ["USA", "Malaysia"]
+  },
+  {
+    "name": "Libya",
+    "isoCode": "LY",
+    "flag": "🇱🇾",
+    "continent": "Africa",
+    "similarNames": ["Lebanon"],
+    "similarFlags": ["Kenya", "Sudan"]
+  },
+  {
+    "name": "Liechtenstein",
+    "isoCode": "LI",
+    "flag": "🇱🇮",
+    "continent": "Europe",
+    "similarNames": ["Lithuania"],
+    "similarFlags": ["Haiti (colors)"]
+  },
+  {
+    "name": "Lithuania",
+    "isoCode": "LT",
+    "flag": "🇱🇹",
+    "continent": "Europe",
+    "similarNames": ["Latvia"],
+    "similarFlags": ["Bolivia", "Myanmar"]
+  },
+  {
+    "name": "Luxembourg",
+    "isoCode": "LU",
+    "flag": "🇱🇺",
+    "continent": "Europe",
+    "similarNames": ["Liechtenstein"],
+    "similarFlags": ["Netherlands", "France"]
+  },
+  {
+    "name": "Madagascar",
+    "isoCode": "MG",
+    "flag": "🇲🇬",
+    "continent": "Africa",
+    "similarNames": ["Malawi"],
+    "similarFlags": ["Belarus", "Bulgaria"]
+  },
+  {
+    "name": "Malawi",
+    "isoCode": "MW",
+    "flag": "🇲🇼",
+    "continent": "Africa",
+    "similarNames": ["Malaysia", "Mali"],
+    "similarFlags": ["Kenya", "South Sudan"]
+  },
+  {
+    "name": "Malaysia",
+    "isoCode": "MY",
+    "flag": "🇲🇾",
+    "continent": "Asia",
+    "similarNames": ["Malawi", "Mali"],
+    "similarFlags": ["USA", "Liberia"]
+  },
+  {
+    "name": "Maldives",
+    "isoCode": "MV",
+    "flag": "🇲🇻",
+    "continent": "Asia",
+    "similarNames": ["Moldova"],
+    "similarFlags": ["Mauritania", "Turkey"]
+  },
+  {
+    "name": "Mali",
+    "isoCode": "ML",
+    "flag": "🇲🇱",
+    "continent": "Africa",
+    "similarNames": ["Malawi"],
+    "similarFlags": ["Guinea", "Senegal"]
+  },
+  {
+    "name": "Malta",
+    "isoCode": "MT",
+    "flag": "🇲🇹",
+    "continent": "Europe",
+    "similarNames": ["Malaysia"],
+    "similarFlags": ["England", "Georgia"]
+  },
+  {
+    "name": "Marshall Islands",
+    "isoCode": "MH",
+    "flag": "🇲🇭",
+    "continent": "Oceania",
+    "similarNames": ["Solomon Islands"],
+    "similarFlags": ["Micronesia"]
+  },
+  {
+    "name": "Mauritania",
+    "isoCode": "MR",
+    "flag": "🇲🇷",
+    "continent": "Africa",
+    "similarNames": ["Mauritius"],
+    "similarFlags": ["Maldives"]
+  },
+  {
+    "name": "Mauritius",
+    "isoCode": "MU",
+    "flag": "🇲🇺",
+    "continent": "Africa",
+    "similarNames": ["Mauritania"],
+    "similarFlags": ["Belize", "Ethiopia"]
+  },
+  {
+    "name": "Mexico",
+    "isoCode": "MX",
+    "flag": "🇲🇽",
+    "continent": "North America",
+    "similarNames": ["Monaco"],
+    "similarFlags": ["Italy", "Bulgaria"]
+  },
+  {
+    "name": "Micronesia",
+    "isoCode": "FM",
+    "flag": "🇫🇲",
+    "continent": "Oceania",
+    "similarNames": ["Marshall Islands"],
+    "similarFlags": ["Somalia (colors)"]
+  },
+  {
+    "name": "Moldova",
+    "isoCode": "MD",
+    "flag": "🇲🇩",
+    "continent": "Europe",
+    "similarNames": ["Maldives"],
+    "similarFlags": ["Romania", "Andorra", "Chad"]
+  },
+  {
+    "name": "Monaco",
+    "isoCode": "MC",
+    "flag": "🇲🇨",
+    "continent": "Europe",
+    "similarNames": ["Morocco"],
+    "similarFlags": ["Indonesia", "Poland"]
+  },
+  {
+    "name": "Mongolia",
+    "isoCode": "MN",
+    "flag": "🇲🇳",
+    "continent": "Asia",
+    "similarNames": ["Montenegro"],
+    "similarFlags": ["Kyrgyzstan", "Nepal"]
+  },
+  {
+    "name": "Montenegro",
+    "isoCode": "ME",
+    "flag": "🇲🇪",
+    "continent": "Europe",
+    "similarNames": ["Mongolia"],
+    "similarFlags": ["Albania", "Austria"]
+  },
+  {
+    "name": "Morocco",
+    "isoCode": "MA",
+    "flag": "🇲🇦",
+    "continent": "Africa",
+    "similarNames": ["Monaco"],
+    "similarFlags": ["China (colors)"]
+  },
+  {
+    "name": "Mozambique",
+    "isoCode": "MZ",
+    "flag": "🇲🇿",
+    "continent": "Africa",
+    "similarNames": ["Zambia"],
+    "similarFlags": ["Zimbabwe", "Namibia"]
+  },
+  {
+    "name": "Myanmar",
+    "isoCode": "MM",
+    "flag": "🇲🇲",
+    "continent": "Asia",
+    "similarNames": ["Burma", "Burundi"],
+    "similarFlags": ["Lithuania", "Ghana"]
+  },
+  {
+    "name": "Namibia",
+    "isoCode": "NA",
+    "flag": "🇳🇦",
+    "continent": "Africa",
+    "similarNames": ["Nauru"],
+    "similarFlags": ["South Africa", "Mozambique"]
+  },
+  {
+    "name": "Nauru",
+    "isoCode": "NR",
+    "flag": "🇳🇷",
+    "continent": "Oceania",
+    "similarNames": ["Namibia"],
+    "similarFlags": ["Ukraine (colors)", "Palau"]
+  },
+  {
+    "name": "Nepal",
+    "isoCode": "NP",
+    "flag": "🇳🇵",
+    "continent": "Asia",
+    "similarNames": ["Niger"],
+    "similarFlags": ["Mongolia", "Cambodia"]
+  },
+  {
+    "name": "Netherlands",
+    "isoCode": "NL",
+    "flag": "🇳🇱",
+    "continent": "Europe",
+    "similarNames": ["New Zealand"],
+    "similarFlags": ["Luxembourg", "Paraguay"]
+  },
+  {
+    "name": "New Zealand",
+    "isoCode": "NZ",
+    "flag": "🇳🇿",
+    "continent": "Oceania",
+    "similarNames": ["Netherlands"],
+    "similarFlags": ["Australia", "UK"]
+  },
+  {
+    "name": "Nicaragua",
+    "isoCode": "NI",
+    "flag": "🇳🇮",
+    "continent": "North America",
+    "similarNames": ["Nigeria", "Niger"],
+    "similarFlags": ["El Salvador", "Guatemala"]
+  },
+  {
+    "name": "Niger",
+    "isoCode": "NE",
+    "flag": "🇳🇪",
+    "continent": "Africa",
+    "similarNames": ["Nigeria", "Nicaragua"],
+    "similarFlags": ["India", "Ivory Coast"]
+  },
+  {
+    "name": "Nigeria",
+    "isoCode": "NG",
+    "flag": "🇳🇬",
+    "continent": "Africa",
+    "similarNames": ["Niger", "Nicaragua"],
+    "similarFlags": ["Italy", "Pakistan"]
+  },
+  {
+    "name": "North Macedonia",
+    "isoCode": "MK",
+    "flag": "🇲🇰",
+    "continent": "Europe",
+    "similarNames": ["Montenegro"],
+    "similarFlags": ["Kyrgyzstan", "Rwanda"]
+  },
+  {
+    "name": "Norway",
+    "isoCode": "NO",
+    "flag": "🇳🇴",
+    "continent": "Europe",
+    "similarNames": ["Denmark"],
+    "similarFlags": ["Iceland", "Finland"]
+  },
+  {
+    "name": "Oman",
+    "isoCode": "OM",
+    "flag": "🇴🇲",
+    "continent": "Asia",
+    "similarNames": ["Romania"],
+    "similarFlags": ["Belarus (colors)"]
+  },
+  {
+    "name": "Pakistan",
+    "isoCode": "PK",
+    "flag": "🇵🇰",
+    "continent": "Asia",
+    "similarNames": ["Palau"],
+    "similarFlags": ["Algeria", "Mauritania"]
+  },
+  {
+    "name": "Palau",
+    "isoCode": "PW",
+    "flag": "🇵🇼",
+    "continent": "Oceania",
+    "similarNames": ["Palestine"],
+    "similarFlags": ["Kazakhstan", "Nauru"]
+  },
+  {
+    "name": "Palestine",
+    "isoCode": "PS",
+    "flag": "🇵🇸",
+    "continent": "Asia",
+    "similarNames": ["Pakistan"],
+    "similarFlags": ["Jordan", "Sudan"],
+    "IsDisputed": true,
+    "reason": "Disputed territory with limited international recognition. (Source Google Gemini 2024-11-28)"
+  },
+  {
+    "name": "Panama",
+    "isoCode": "PA",
+    "flag": "🇵🇦",
+    "continent": "North America",
+    "similarNames": ["Paraguay"],
+    "similarFlags": ["Cuba", "Texas (USA State)"]
+  },
+  {
+    "name": "Papua New Guinea",
+    "isoCode": "PG",
+    "flag": "🇵🇬",
+    "continent": "Oceania",
+    "similarNames": ["Guinea", "Guinea-Bissau"],
+    "similarFlags": ["Vanuatu", "East Timor"]
+  },
+  {
+    "name": "Paraguay",
+    "isoCode": "PY",
+    "flag": "🇵🇾",
+    "continent": "South America",
+    "similarNames": ["Uruguay"],
+    "similarFlags": ["Netherlands", "Slovakia"]
+  },
+  {
+    "name": "Peru",
+    "isoCode": "PE",
+    "flag": "🇵🇪",
+    "continent": "South America",
+    "similarNames": ["Poland"],
+    "similarFlags": ["Canada", "Austria"]
+  },
+  {
+    "name": "Philippines",
+    "isoCode": "PH",
+    "flag": "🇵🇭",
+    "continent": "Asia",
+    "similarNames": ["Poland"],
+    "similarFlags": ["Czech Republic", "Cuba"]
+  },
+  {
+    "name": "Poland",
+    "isoCode": "PL",
+    "flag": "🇵🇱",
+    "continent": "Europe",
+    "similarNames": ["Peru"],
+    "similarFlags": ["Indonesia", "Monaco"]
+  },
+  {
+    "name": "Portugal",
+    "isoCode": "PT",
+    "flag": "🇵🇹",
+    "continent": "Europe",
+    "similarNames": ["Puerto Rico"],
+    "similarFlags": ["Spain", "Guinea-Bissau"]
+  },
+  {
+    "name": "Qatar",
+    "isoCode": "QA",
+    "flag": "🇶🇦",
+    "continent": "Asia",
+    "similarNames": ["Equatorial Guinea"],
+    "similarFlags": ["Bahrain", "Latvia"]
+  },
+  {
+    "name": "Romania",
+    "isoCode": "RO",
+    "flag": "🇷🇴",
+    "continent": "Europe",
+    "similarNames": ["Armenia"],
+    "similarFlags": ["Chad", "Moldova", "Andorra"]
+  },
+  {
+    "name": "Russia",
+    "isoCode": "RU",
+    "flag": "🇷🇺",
+    "continent": "Europe",
+    "similarNames": ["Belarus"],
+    "similarFlags": ["Netherlands", "Serbia"]
+  },
+  {
+    "name": "Rwanda",
+    "isoCode": "RW",
+    "flag": "🇷🇼",
+    "continent": "Africa",
+    "similarNames": ["Rwanda"],
+    "similarFlags": ["Kazakhstan", "Gabon"]
+  },
+  {
+    "name": "Saint Kitts and Nevis",
+    "isoCode": "KN",
+    "flag": "🇰🇳",
+    "continent": "North America",
+    "similarNames": ["Saint Lucia"],
+    "similarFlags": ["Sao Tome and Principe", "Grenada"]
+  },
+  {
+    "name": "Saint Lucia",
+    "isoCode": "LC",
+    "flag": "🇱🇨",
+    "continent": "North America",
+    "similarNames": ["Saint Kitts and Nevis"],
+    "similarFlags": ["Tuvalu", "Solomon Islands"]
+  },
+  {
+    "name": "Saint Vincent and the Grenadines",
+    "isoCode": "VC",
+    "flag": "🇻🇨",
+    "continent": "North America",
+    "similarNames": ["Saint Lucia"],
+    "similarFlags": ["Nauru", "Barbados"]
+  },
+  {
+    "name": "Samoa",
+    "isoCode": "WS",
+    "flag": "🇼🇸",
+    "continent": "Oceania",
+    "similarNames": ["Somalia"],
+    "similarFlags": ["Taiwan (colors)", "Cape Verde"]
+  },
+  {
+    "name": "San Marino",
+    "isoCode": "SM",
+    "flag": "🇸🇲",
+    "continent": "Europe",
+    "similarNames": ["Sierra Leone"],
+    "similarFlags": ["Argentina", "Guatemala"]
+  },
+  {
+    "name": "Sao Tome and Principe",
+    "isoCode": "ST",
+    "flag": "🇸🇹",
+    "continent": "Africa",
+    "similarNames": ["Saint Kitts and Nevis"],
+    "similarFlags": ["Ghana", "Myanmar"]
+  },
+  {
+    "name": "Saudi Arabia",
+    "isoCode": "SA",
+    "flag": "🇸🇦",
+    "continent": "Asia",
+    "similarNames": ["South Africa"],
+    "similarFlags": ["Pakistan", "Turkmenistan"]
+  },
+  {
+    "name": "Senegal",
+    "isoCode": "SN",
+    "flag": "🇸🇳",
+    "continent": "Africa",
+    "similarNames": ["Seychelles"],
+    "similarFlags": ["Mali", "Cameroon"]
+  },
+  {
+    "name": "Serbia",
+    "isoCode": "RS",
+    "flag": "🇷🇸",
+    "continent": "Europe",
+    "similarNames": ["Syria"],
+    "similarFlags": ["Slovakia", "Russia"]
+  },
+  {
+    "name": "Seychelles",
+    "isoCode": "SC",
+    "flag": "🇸🇨",
+    "continent": "Africa",
+    "similarNames": ["Senegal"],
+    "similarFlags": ["Central African Republic", "South Africa"]
+  },
+  {
+    "name": "Sierra Leone",
+    "isoCode": "SL",
+    "flag": "🇸🇱",
+    "continent": "Africa",
+    "similarNames": ["San Marino"],
+    "similarFlags": ["Nigeria", "Uzbekistan"]
+  },
+  {
+    "name": "Singapore",
+    "isoCode": "SG",
+    "flag": "🇸🇬",
+    "continent": "Asia",
+    "similarNames": ["Senegal"],
+    "similarFlags": ["Indonesia (colors)", "Poland"]
+  },
+  {
+    "name": "Slovakia",
+    "isoCode": "SK",
+    "flag": "🇸🇰",
+    "continent": "Europe",
+    "similarNames": ["Slovenia"],
+    "similarFlags": ["Russia", "Serbia"]
+  },
+  {
+    "name": "Slovenia",
+    "isoCode": "SI",
+    "flag": "🇸🇮",
+    "continent": "Europe",
+    "similarNames": ["Slovakia"],
+    "similarFlags": ["Russia", "Slovakia"]
+  },
+  {
+    "name": "Solomon Islands",
+    "isoCode": "SB",
+    "flag": "🇸🇧",
+    "continent": "Oceania",
+    "similarNames": ["Marshall Islands"],
+    "similarFlags": ["Tanzania", "Saint Lucia"]
+  },
+  {
+    "name": "Somalia",
+    "isoCode": "SO",
+    "flag": "🇸🇴",
+    "continent": "Africa",
+    "similarNames": ["Samoa"],
+    "similarFlags": ["Micronesia", "Israel (colors)"]
+  },
+  {
+    "name": "South Africa",
+    "isoCode": "ZA",
+    "flag": "🇿🇦",
+    "continent": "Africa",
+    "similarNames": ["South Sudan"],
+    "similarFlags": ["Namibia", "Zimbabwe"]
+  },
+  {
+    "name": "South Sudan",
+    "isoCode": "SS",
+    "flag": "🇸🇸",
+    "continent": "Africa",
+    "similarNames": ["South Africa"],
+    "similarFlags": ["Kenya", "Sudan"]
+  },
+  {
+    "name": "Spain",
+    "isoCode": "ES",
+    "flag": "🇪🇸",
+    "continent": "Europe",
+    "similarNames": ["Sri Lanka"],
+    "similarFlags": ["Andorra", "Macedonia"]
+  },
+  {
+    "name": "Sri Lanka",
+    "isoCode": "LK",
+    "flag": "🇱🇰",
+    "continent": "Asia",
+    "similarNames": ["Slovakia"],
+    "similarFlags": ["Spain (colors)"]
+  },
+  {
+    "name": "Sudan",
+    "isoCode": "SD",
+    "flag": "🇸🇩",
+    "continent": "Africa",
+    "similarNames": ["South Sudan"],
+    "similarFlags": ["Palestine", "Jordan"]
+  },
+  {
+    "name": "Suriname",
+    "isoCode": "SR",
+    "flag": "🇸🇷",
+    "continent": "South America",
+    "similarNames": ["Serbia"],
+    "similarFlags": ["Myanmar", "Burkina Faso"]
+  },
+  {
+    "name": "Sweden",
+    "isoCode": "SE",
+    "flag": "🇸🇪",
+    "continent": "Europe",
+    "similarNames": ["Switzerland"],
+    "similarFlags": ["Finland", "Norway"]
+  },
+  {
+    "name": "Switzerland",
+    "isoCode": "CH",
+    "flag": "🇨🇭",
+    "continent": "Europe",
+    "similarNames": ["Sweden"],
+    "similarFlags": ["Denmark", "England (colors)"]
+  },
+  {
+    "name": "Syria",
+    "isoCode": "SY",
+    "flag": "🇸🇾",
+    "continent": "Asia",
+    "similarNames": ["Serbia"],
+    "similarFlags": ["Iraq", "Egypt"]
+  },
+  {
+    "name": "Taiwan",
+    "isoCode": "TW",
+    "flag": "🇹🇼",
+    "continent": "Asia",
+    "similarNames": ["Thailand"],
+    "similarFlags": ["Samoa (colors)", "Myanmar"],
+    "IsDisputed": true,
+    "reason": "Political status is disputed; not universally recognized as independent. (Source Google Gemini 2024-11-28)"
+  },
+  {
+    "name": "Tajikistan",
+    "isoCode": "TJ",
+    "flag": "🇹🇯",
+    "continent": "Asia",
+    "similarNames": ["Turkmenistan"],
+    "similarFlags": ["Iran", "Belarus"]
+  },
+  {
+    "name": "Tanzania",
+    "isoCode": "TZ",
+    "flag": "🇹🇿",
+    "continent": "Africa",
+    "similarNames": ["Tasmania (Australia)"],
+    "similarFlags": ["Solomon Islands", "Namibia"]
+  },
+  {
+    "name": "Thailand",
+    "isoCode": "TH",
+    "flag": "🇹🇭",
+    "continent": "Asia",
+    "similarNames": ["Taiwan"],
+    "similarFlags": ["Costa Rica", "North Korea"]
+  },
+  {
+    "name": "Togo",
+    "isoCode": "TG",
+    "flag": "🇹🇬",
+    "continent": "Africa",
+    "similarNames": ["Tonga"],
+    "similarFlags": ["Burkina Faso", "Ghana"]
+  },
+  {
+    "name": "Tonga",
+    "isoCode": "TO",
+    "flag": "🇹🇴",
+    "continent": "Oceania",
+    "similarNames": ["Togo"],
+    "similarFlags": ["England", "Georgia"]
+  },
+  {
+    "name": "Trinidad and Tobago",
+    "isoCode": "TT",
+    "flag": "🇹🇹",
+    "continent": "North America",
+    "similarNames": ["Tobago"],
+    "similarFlags": ["Bahamas (colors)", "Qatar (colors)"]
+  },
+  {
+    "name": "Tunisia",
+    "isoCode": "TN",
+    "flag": "🇹🇳",
+    "continent": "Africa",
+    "similarNames": ["Turkey"],
+    "similarFlags": ["Turkey", "Singapore"]
+  },
+  {
+    "name": "Turkey",
+    "isoCode": "TR",
+    "flag": "🇹🇷",
+    "continent": "Asia",
+    "similarNames": ["Tunisia"],
+    "similarFlags": ["Tunisia", "Singapore"]
+  },
+  {
+    "name": "Turkmenistan",
+    "isoCode": "TM",
+    "flag": "🇹🇲",
+    "continent": "Asia",
+    "similarNames": ["Tajikistan"],
+    "similarFlags": ["Belarus", "Saudi Arabia"]
+  },
+  {
+    "name": "Tuvalu",
+    "isoCode": "TV",
+    "flag": "🇹🇻",
+    "continent": "Oceania",
+    "similarNames": ["Tonga"],
+    "similarFlags": ["Australia", "Fiji"]
+  },
+  {
+    "name": "Uganda",
+    "isoCode": "UG",
+    "flag": "🇺🇬",
+    "continent": "Africa",
+    "similarNames": ["Ukraine"],
+    "similarFlags": ["Germany", "Belgium"]
+  },
+  {
+    "name": "Ukraine",
+    "isoCode": "UA",
+    "flag": "🇺🇦",
+    "continent": "Europe",
+    "similarNames": ["Uganda"],
+    "similarFlags": ["Sweden (colors)", "Kazakhstan"]
+  },
+  {
+    "name": "United Arab Emirates",
+    "isoCode": "AE",
+    "flag": "🇦🇪",
+    "continent": "Asia",
+    "similarNames": ["United Kingdom"],
+    "similarFlags": ["Kuwait", "Sudan"]
+  },
+  {
+    "name": "United Kingdom",
+    "isoCode": "GB",
+    "flag": "🇬🇧",
+    "continent": "Europe",
+    "similarNames": ["United Arab Emirates"],
+    "similarFlags": ["Australia", "New Zealand"]
+  },
+  {
+    "name": "United States",
+    "isoCode": "US",
+    "flag": "🇺🇸",
+    "continent": "North America",
+    "similarNames": ["United Kingdom"],
+    "similarFlags": ["Liberia", "Malaysia"]
+  },
+  {
+    "name": "Uruguay",
+    "isoCode": "UY",
+    "flag": "🇺🇾",
+    "continent": "South America",
+    "similarNames": ["Paraguay"],
+    "similarFlags": ["Greece", "Argentina"]
+  },
+  {
+    "name": "Uzbekistan",
+    "isoCode": "UZ",
+    "flag": "🇺🇿",
+    "continent": "Asia",
+    "similarNames": ["Turkmenistan"],
+    "similarFlags": ["Azerbaijan", "Sierra Leone"]
+  },
+  {
+    "name": "Vanuatu",
+    "isoCode": "VU",
+    "flag": "🇻🇺",
+    "continent": "Oceania",
+    "similarNames": ["Venezuela"],
+    "similarFlags": ["Papua New Guinea", "South Africa"]
+  },
+  {
+    "name": "Vatican City",
+    "isoCode": "VA",
+    "flag": "🇻🇦",
+    "continent": "Europe",
+    "similarNames": ["Italy"],
+    "similarFlags": ["Andorra (colors)"],
+    "IsDisputed": true,
+    "reason": "Has unique international status and is not universally recognized as a country. (Source Google Gemini 2024-11-28)"
+  },
+  {
+    "name": "Venezuela",
+    "isoCode": "VE",
+    "flag": "🇻🇪",
+    "continent": "South America",
+    "similarNames": ["Vanuatu"],
+    "similarFlags": ["Colombia", "Ecuador"]
+  },
+  {
+    "name": "Vietnam",
+    "isoCode": "VN",
+    "flag": "🇻🇳",
+    "continent": "Asia",
+    "similarNames": ["Vatican"],
+    "similarFlags": ["China", "Cameroon"]
+  },
+  {
+    "name": "Western Sahara",
+    "isoCode": "EH",
+    "flag": "🇪🇭",
+    "continent": "Africa",
+    "similarNames": ["Morocco"],
+    "similarFlags": ["Palestine", "Sudan"],
+    "IsDisputed": true,
+    "reason": "Disputed territory claimed by both the Sahrawi Arab Democratic Republic and Morocco. (Source ChatGPT o1-preview 2024-11-28)"
+  },
+  {
+    "name": "Yemen",
+    "isoCode": "YE",
+    "flag": "🇾🇪",
+    "continent": "Asia",
+    "similarNames": ["Oman"],
+    "similarFlags": ["Syria", "Iraq"]
+  },
+  {
+    "name": "Zambia",
+    "isoCode": "ZM",
+    "flag": "🇿🇲",
+    "continent": "Africa",
+    "similarNames": ["Zimbabwe"],
+    "similarFlags": ["Mozambique", "South Africa"]
+  },
+  {
+    "name": "Zimbabwe",
+    "isoCode": "ZW",
+    "flag": "🇿🇼",
+    "continent": "Africa",
+    "similarNames": ["Zambia"],
+    "similarFlags": ["Mozambique", "Myanmar"]
+  }
+];
+
+
+  // Initialize variables
+  let settings = {
+    testMode: false,
+    hardMode: false,
+    noneOption: false,
+    skipCount: 3,
+    continents: ["Africa", "Asia", "Europe", "North America", "South America", "Oceania"],
+    excludeDisputed: false
+  };
+
+  let score = {
+    correct: 0,
+    total: 0
+  };
+
+  let skipUsed = 0;
+  let usedCountries = [];
+  let currentCountry = null;
+  // Get modal elements
+  const disputeModal = document.getElementById('disputeModal');
+  const includeDisputedButton = document.getElementById('includeDisputedButton');
+  const excludeDisputedButton = document.getElementById('excludeDisputedButton');
+
+  // Add event listeners to modal buttons
+  includeDisputedButton.onclick = () => {
+    settings.excludeDisputed = false;
+    saveSettings();
+    disputeModal.style.display = 'none';
+    initializeGame();
+  };
+
+  excludeDisputedButton.onclick = () => {
+    settings.excludeDisputed = true;
+    saveSettings();
+    disputeModal.style.display = 'none';
+    initializeGame();
+  };
+
+  // Load settings and progress from localStorage
+  function loadSettings() {
+    const savedSettings = localStorage.getItem('flagQuizSettings');
+    if (savedSettings) {
+      settings = JSON.parse(savedSettings);
+      document.getElementById('testMode').checked = settings.testMode;
+      document.getElementById('hardMode').checked = settings.hardMode;
+      document.getElementById('noneOption').checked = settings.noneOption;
+      document.getElementById('skipCount').value = settings.skipCount;
+      document.getElementById('excludeDisputed').checked = settings.excludeDisputed;
+      document.querySelectorAll('.continent').forEach(cb => {
+        cb.checked = settings.continents.includes(cb.value);
+      });
+      // Initialize the game since settings are loaded
+      initializeGame();
+    } else {
+      // No settings found, show the modal
+      disputeModal.style.display = 'block';
+    }
+  }
+
+  function loadProgress() {
+    const savedScore = localStorage.getItem('flagQuizScore');
+    if (savedScore) {
+      score = JSON.parse(savedScore);
+      updateScoreDisplay();
+    }
+    const savedUsedCountries = localStorage.getItem('flagQuizUsedCountries');
+    if (savedUsedCountries) {
+      usedCountries = JSON.parse(savedUsedCountries);
+    }
+    const savedSkipUsed = localStorage.getItem('flagQuizSkipUsed');
+    if (savedSkipUsed) {
+      skipUsed = parseInt(savedSkipUsed);
+      updateSkipButton();
+    }
+  }
+  function initializeGame() {
+    updateSkipButton();
+    updateScoreDisplay();
+    showNextQuestion();
+  }
+
+  function saveSettings() {
+    settings.testMode = document.getElementById('testMode').checked;
+    settings.hardMode = document.getElementById('hardMode').checked;
+    settings.noneOption = document.getElementById('noneOption').checked;
+    settings.skipCount = parseInt(document.getElementById('skipCount').value);
+    settings.excludeDisputed = document.getElementById('excludeDisputed').checked;
+    settings.continents = Array.from(document.querySelectorAll('.continent'))
+                              .filter(cb => cb.checked)
+                              .map(cb => cb.value);
+    localStorage.setItem('flagQuizSettings', JSON.stringify(settings));
+  }
+
+  function saveProgress() {
+    localStorage.setItem('flagQuizScore', JSON.stringify(score));
+    localStorage.setItem('flagQuizUsedCountries', JSON.stringify(usedCountries));
+    localStorage.setItem('flagQuizSkipUsed', skipUsed);
+  }
+
+  function updateScoreDisplay() {
+    document.getElementById('score').innerText = `Score: ${score.correct}/${score.total}`;
+  }
+
+  function updateSkipButton() {
+    const skipsLeft = settings.skipCount - skipUsed;
+    document.getElementById('skipButton').innerText = `Skip (${skipsLeft} left)`;
+    document.getElementById('skipButton').disabled = skipsLeft <= 0;
+  }
+
+  function getRandomCountry() {
+    let availableCountries = countryData.filter(country => settings.continents.includes(country.continent));
+  
+    if (settings.excludeDisputed) {
+      availableCountries = availableCountries.filter(country => !country.IsDisputed);
+    }
+  
+    if (settings.testMode) {
+      availableCountries = availableCountries.filter(country => !usedCountries.includes(country.isoCode));
+    }
+  
+    if (availableCountries.length === 0) {
+      return null;
+    }
+  
+    return availableCountries[Math.floor(Math.random() * availableCountries.length)];
+  }
+
+  function generateOptions(correctCountry) {
+    let options = [correctCountry.name];
+    let incorrectOptions = [];
+  
+    // Collect potential incorrect options
+    if (settings.hardMode) {
+      if (Math.random() < 0.5 && correctCountry.similarNames.length > 0) {
+        incorrectOptions = correctCountry.similarNames;
+      } else if (correctCountry.similarFlags.length > 0) {
+        incorrectOptions = correctCountry.similarFlags;
+      }
+    }
+  
+    // Filter out disputed regions if setting is enabled
+    if (settings.excludeDisputed) {
+      incorrectOptions = incorrectOptions.filter(name => {
+        const country = countryData.find(c => c.name === name);
+        return country && !country.IsDisputed;
+      });
+    }
+  
+    // Add incorrect options
+    while (options.length < 4) {
+      let option;
+      if (incorrectOptions.length > 0) {
+        option = incorrectOptions[Math.floor(Math.random() * incorrectOptions.length)];
+      } else {
+        const randomCountry = countryData[Math.floor(Math.random() * countryData.length)];
+        option = randomCountry.name;
+      }
+  
+      if (!options.includes(option) && option !== correctCountry.name) {
+        const country = countryData.find(c => c.name === option);
+        if (!country || (settings.excludeDisputed && country.IsDisputed)) {
+          continue;
+        }
+        options.push(option);
+      }
+    }
+  
+    return options.sort(() => Math.random() - 0.5);
+  }
+  
+
+  function showNextQuestion() {
+    currentCountry = getRandomCountry();
+    if (!currentCountry) {
+      document.getElementById('flag').innerText = '🎉';
+      document.getElementById('feedback').innerText = 'Congratulations! You have completed all countries in Test Mode.';
+      return;
+    }
+    document.getElementById('flag').innerText = currentCountry.flag;
+    const options = generateOptions(currentCountry);
+    options.forEach((option, index) => {
+      const button = document.getElementById(`option${index}`);
+      button.style.display = 'block';
+      button.innerText = option;
+      button.onclick = () => selectOption(option);
+    });
+    if (options.length < 5) {
+      document.getElementById('option4').style.display = 'none';
+    }
+    if (settings.testMode) {
+      usedCountries.push(currentCountry.isoCode);
+    }
+    saveProgress();
+  }
+
+  function selectOption(selectedOption) {
+    score.total++;
+    let isCorrect = false;
+    if (selectedOption === currentCountry.name) {
+      isCorrect = true;
+    } else if (selectedOption === "None of the Above" && !generateOptions(currentCountry).includes(currentCountry.name)) {
+      isCorrect = true;
+    }
+    if (isCorrect) {
+      score.correct++;
+      showFeedback(true);
+    } else {
+      showFeedback(false);
+    }
+    updateScoreDisplay();
+    setTimeout(() => {
+      showNextQuestion();
+    }, 1000);
+    saveProgress();
+  }
+
+  function showFeedback(isCorrect) {
+    const feedback = document.getElementById('feedback');
+    feedback.className = '';
+    if (isCorrect) {
+      feedback.innerText = 'Correct!';
+      feedback.classList.add('correct');
+    } else {
+      feedback.innerText = `Incorrect! The correct answer was ${currentCountry.name}.`;
+      feedback.classList.add('incorrect');
+    }
+  }
+
+  function resetGame() {
+    if (confirm('Are you sure you want to reset the game?')) {
+      score = { correct: 0, total: 0 };
+      skipUsed = 0;
+      usedCountries = [];
+      saveProgress();
+      updateScoreDisplay();
+      updateSkipButton();
+      showNextQuestion();
+    }
+  }
+  function fullReset() {
+    if (confirm('Are you sure you want to reset the game?')) {
+      localStorage.clear(); // Clear all saved data, including settings
+      location.reload(); // Reload the page to start fresh
+    }
+  }
+
+  function skipQuestion() {
+    skipUsed++;
+    updateSkipButton();
+    showFeedback(false);
+    setTimeout(() => {
+      showNextQuestion();
+    }, 1000);
+    saveProgress();
+  }
+
+  document.getElementById('skipButton').onclick = () => {
+    if (skipUsed < settings.skipCount) {
+      skipQuestion();
+    }
+  };
+
+  document.getElementById('resetButton').onclick = resetGame;
+  document.getElementById('fullresetButton').onclick = fullReset;
+
+  document.getElementById('settingsButton').onclick = () => {
+    const settingsDiv = document.getElementById('settings');
+    settingsDiv.classList.toggle('hidden');
+    settingsDiv.classList.toggle('visible');
+  };
+
+  document.getElementById('saveSettingsButton').onclick = () => {
+    saveSettings();
+    updateSkipButton();
+    document.getElementById('settings').style.display = 'none';
+    showNextQuestion();
+  };
+
+  // Initial Load
+  loadSettings();
+  
+
+</script>
+</body>
+</html>
