@@ -16,6 +16,20 @@ See LICENSE file in the project root for full license information.
     text-align: center;
     margin: 0;
     padding: 0;
+    position: relative;
+
+  }
+  .background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 120%;
+    font-size: 120px;
+    opacity: 0.4;
+    z-index: -1;
+    white-space: pre-wrap; /* Preserve whitespace */
+    overflow: hidden; /* Prevent scrolling */
   }
   .hidden {
     display: none;
@@ -142,7 +156,14 @@ See LICENSE file in the project root for full license information.
 </style>
 </head>
 <body>
+<div class="background" id="background"></div>
+<script>
+  const flags = "🇦🇫 🇦🇱 🇩🇿 🇦🇸 🇦🇩 🇦🇴 🇦🇮 🇦🇶 🇦🇬 🇦🇷 🇦🇲 🇦🇼 🇦🇺 🇦🇹 🇦🇿 🇧🇸 🇧🇭 🇧🇩 🇧🇧 🇧🇾 🇧🇪 🇧🇿 🇧🇯 🇧🇲 🇧🇹 🇧🇴 🇧🇦 🇧🇼 🇧🇷 🇧🇳 🇧🇬 🇧🇫 🇧🇮 🇨🇻 🇰🇭 🇨🇲 🇨🇦 🇨🇫 🇹🇩 🇨🇱 🇨🇳 🇨🇴 🇰🇲 🇨🇬 🇨🇩 🇨🇷 🇭🇷 🇨🇺 🇨🇾 🇨🇿 🇩🇰 🇩🇯 🇩🇲 🇩🇴 🇪🇨 🇪🇬 🇸🇻 🇬🇶 🇪🇷 🇪🇪 🇸🇿 🇪🇹 🇫🇯 🇫🇮 🇫🇷 🇬🇦 🇬🇲 🇬🇪 🇩🇪 🇬🇭 🇬🇷 🇬🇩 🇬🇹 🇬🇳 🇬🇼 🇬🇾 🇭🇹 🇭🇳 🇭🇺 🇮🇸 🇮🇳 🇮🇩 🇮🇷 🇮🇶 🇮🇪 🇮🇱 🇮🇹 🇯🇲 🇯🇵 🇯🇴 🇰🇿 🇰🇪 🇰🇮 🇰🇵 🇰🇷 🇰🇼 🇰🇬 🇱🇦 🇱🇻 🇱🇧 🇱🇸 🇱🇷 🇱🇾 🇱🇹 🇱🇺 🇲🇬 🇲🇼 🇲🇾 🇲🇻 🇲🇱 🇲🇹 🇲🇭 🇲🇷 🇲🇺 🇲🇽 🇫🇲 🇲🇩 🇲🇨 🇲🇳 🇲🇪 🇲🇦 🇲🇿 🇲🇲 🇳🇦 🇳🇷 🇳🇵 🇳🇱 🇳🇨 🇳🇿 🇳🇮 🇳🇪 🇳🇬 🇳🇺 🇲🇰 🇲🇵 🇳🇴 🇴🇲 🇵🇰 🇵🇼 🇵🇸 🇵🇦 🇵🇬 🇵🇾 🇵🇪 🇵🇭 🇵🇱 🇵🇹 🇵🇷 🇶🇦 🇷🇴 🇷🇺 🇷🇼 🇰🇳 🇱🇨 🇻🇨 🇼🇸 🇸🇲 🇸🇹 🇸🇦 🇸🇳 🇷🇸 🇸🇨 🇸🇱 🇸🇬 🇸🇰 🇸🇮 🇸🇧 🇸🇴 🇿🇦 🇪🇸 🇱🇰 🇸🇩 🇸🇷 🇸🇪 🇨🇭 🇸🇾 🇹🇼 🇹🇯 🇹🇿 🇹🇭 🇹🇱 🇹🇬 🇹🇴 🇹🇹 🇹🇳 🇹🇷 🇹🇲 🇹🇻 🇺🇬 🇺🇦 🇦🇪 🇬🇧 🇺🇸 🇺🇾 🇺🇿 🇻🇺 🇻🇦 🇻🇪 🇻🇳 🇾🇪 🇿🇲 🇿🇼";
+  const repeatedFlags = flags.repeat(60);
+  document.getElementById('background').textContent = repeatedFlags;
+</script>
 
+<div style="background-color: white; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); padding: 20px; margin: 20px auto; max-width: 50vw;">
 <h1>Flag Quiz Game</h1>
 <div id="flag">🏳️</div>
 
@@ -155,15 +176,13 @@ See LICENSE file in the project root for full license information.
 </div>
 
 <div id="feedback"></div>
-
 <div id="score">Score: 0/0</div>
-
 <div id="controls">
   <button id="skipButton">Skip (3 left)</button>
   <button id="settingsButton">Settings</button>
   <button id="resetButton">Reset</button>
 </div>
-
+</div>
 <div id="settings" class="hidden">
   <h2>Settings</h2>
   <label><input type="checkbox" id="testMode"> Each Country Once (Test Mode)</label>
@@ -186,6 +205,7 @@ See LICENSE file in the project root for full license information.
   </label>  <button id="saveSettingsButton">Save Settings</button>
   <button id="fullresetButton">Full Reset</button>
 </div>
+
 
 <!-- Modal Dialog -->
 <div id="disputeModal" class="modal">
