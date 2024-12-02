@@ -153,6 +153,28 @@ See LICENSE file in the project root for full license information.
     font-size: 1em;
     cursor: pointer;
   }
+  #feedback {
+    transition: none; /* Disable transition for keyframe animation */
+  }
+  
+  @keyframes growAndShrink {
+    0% {
+      transform: scale(1);
+      color: inherit;
+    }
+    50% {
+      transform: scale(1.5);
+      color: var(--feedback-color);
+    }
+    100% {
+      transform: scale(1);
+      color: black;
+    }
+  }
+  
+  #feedback.animate {
+    animation: growAndShrink 1s forwards;
+  }
 </style>
 </head>
 <body>
@@ -183,7 +205,8 @@ See LICENSE file in the project root for full license information.
   <button id="resetButton">Reset</button>
 </div>
 </div>
-<div id="settings" class="hidden">
+
+<div id="settings" class="hidden" style="background-color: white; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); padding: 20px; margin: 20px auto; max-width: 50vw;">
   <h2>Settings</h2>
   <label><input type="checkbox" id="testMode"> Each Country Once (Test Mode)</label>
   <label><input type="checkbox" id="hardMode"> Hard Mode</label>
@@ -2029,14 +2052,20 @@ See LICENSE file in the project root for full license information.
 
   function showFeedback(isCorrect) {
     const feedback = document.getElementById('feedback');
-    feedback.className = '';
-    if (isCorrect) {
-      feedback.innerText = 'Correct!';
-      feedback.classList.add('correct');
-    } else {
-      feedback.innerText = `Incorrect! The correct answer was ${currentCountry.name}.`;
-      feedback.classList.add('incorrect');
-    }
+    
+    // Set initial color based on correctness
+    const feedbackColor = isCorrect ? 'green' : 'red';
+    feedback.style.setProperty('--feedback-color', feedbackColor);
+    
+    // Trigger reflow to restart the animation
+    feedback.classList.remove('animate');
+    void feedback.offsetWidth; // Trigger reflow
+    
+    // Add the animate class to start the animation
+    feedback.classList.add('animate');
+    
+    // Set the feedback text
+    feedback.textContent = isCorrect ? 'Correct!' : 'Incorrect!';
   }
 
   function resetGame() {
