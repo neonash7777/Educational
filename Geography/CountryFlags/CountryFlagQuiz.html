@@ -153,10 +153,11 @@ See LICENSE file in the project root for full license information.
     font-size: 1em;
     cursor: pointer;
   }
+
+  /* FEEDBACK Correct/Incorrect Animation */
   #feedback {
     transition: none; /* Disable transition for keyframe animation */
   }
-  
   @keyframes growAndShrink {
     0% {
       transform: scale(1);
@@ -171,7 +172,6 @@ See LICENSE file in the project root for full license information.
       color: black !important;
     }
   }
-  
   #feedback.animate {
     animation: growAndShrink 1s forwards;
   }
