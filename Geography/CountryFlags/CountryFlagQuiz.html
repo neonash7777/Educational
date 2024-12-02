@@ -154,16 +154,23 @@ See LICENSE file in the project root for full license information.
     cursor: pointer;
   }
 
-  /* FEEDBACK Correct/Incorrect Animation */
   #feedback {
     transition: none; /* Disable transition for keyframe animation */
   }
-  @keyframes growAndShrink {
+  
+  @keyframes grow {
     0% {
       transform: scale(1);
       color: inherit;
     }
-    50% {
+    100% {
+      transform: scale(1.5);
+      color: var(--feedback-color);
+    }
+  }
+  
+  @keyframes shrink {
+    0% {
       transform: scale(1.5);
       color: var(--feedback-color);
     }
@@ -172,8 +179,13 @@ See LICENSE file in the project root for full license information.
       color: black !important;
     }
   }
-  #feedback.animate {
-    animation: growAndShrink 1s forwards;
+  
+  #feedback.grow {
+    animation: grow 0.5s forwards;
+  }
+  
+  #feedback.shrink {
+    animation: shrink 0.5s forwards;
   }
 </style>
 </head>
@@ -2057,15 +2069,23 @@ See LICENSE file in the project root for full license information.
     const feedbackColor = isCorrect ? 'green' : 'red';
     feedback.style.setProperty('--feedback-color', feedbackColor);
     
+    // Remove any existing animation classes
+    feedback.classList.remove('grow', 'shrink');
+    
     // Trigger reflow to restart the animation
-    feedback.classList.remove('animate');
     void feedback.offsetWidth; // Trigger reflow
     
-    // Add the animate class to start the animation
-    feedback.classList.add('animate');
+    // Add the grow class to start the grow animation
+    feedback.classList.add('grow');
     
     // Set the feedback text
     feedback.textContent = isCorrect ? 'Correct!' : 'Incorrect!';
+    
+    // After the grow animation ends, start the shrink animation
+    setTimeout(() => {
+      feedback.classList.remove('grow');
+      feedback.classList.add('shrink');
+    }, 500); // Duration of the grow animation
   }
 
   function resetGame() {
